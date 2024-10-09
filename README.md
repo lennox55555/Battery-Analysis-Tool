@@ -41,26 +41,26 @@ git clone https://github.com/lennox55555/Battery-Analysis-Tool.git
 cd Battery-Storage-Analysis-Tool
 ```
 
-2. (Optional) Create and activate a virtual environment:
+3. (Optional) Create and activate a virtual environment:
 
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows use venv\Scripts\activate
 ```
 
-3. Install the required packages:
+4. Install the required packages:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Update the script with correlating path:
+5. Update the script with correlating path:
 
 - Place your CSV file in the `Battery-Storage-Analysis-Tool` directory.
 
 - Open `main.py` and update the file path in the `load_battery_data`.
 
-5. Run the script
+6. Run the script
 
 ```bash
 python main.py
