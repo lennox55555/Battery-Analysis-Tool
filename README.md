@@ -36,7 +36,7 @@ git clone https://github.com/lennox55555/Battery-Analysis-Tool.git
 2. Change Directory:
 
 ```bash
-cd Battery-Storage-Analysis-Tool
+cd Battery-Analysis-Tool/
 ```
 
 3. (Optional) Create and activate a virtual environment:
