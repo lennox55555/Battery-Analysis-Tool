@@ -33,8 +33,6 @@ You need Python 3.12.4 installed on your system. The project uses the following 
 git clone https://github.com/lennox55555/Battery-Analysis-Tool.git
 ```
 
-### Installing
-
 2. Change Directory:
 
 ```bash
