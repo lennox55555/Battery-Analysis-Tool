@@ -324,8 +324,8 @@ def process_csv_files(input_folder, output_folder):
 # main execution block ensures that the following code only runs when this script is executed directly
 if __name__ == "__main__":
     # sets paths for input folder containing CSV files and output folder for saving results
-    input_folder = '/Users/lennox/Desktop/Lennox'
-    output_folder = '/Users/lennox/Desktop/Lennox/output'
+    input_folder = '/Users/lennox/Documents/Battery-Analysis-Tool'
+    output_folder = '/Users/lennox/Documents/Battery-Analysis-Tool/output'
 
     # checks if the output folder exists; creates it if not to ensure results can be saved
     if not os.path.exists(output_folder):
