@@ -39,7 +39,7 @@ pip install -r requirements.txt
 
 - Place your all your CSV files in the `Battery-Storage-Analysis-Tool` directory.
 
-- Open `main.py` and update the input and output file path. Input should be the directory `.../Battery-Storage-Analysis-Tool` and the Output path should be `.../Battery-Storage-Analysis-Tool/output`. Refer to the existing path as an example.
+- Open `main.py` and update the input and output file path. Input should be the directory `.../Battery-Analysis-Tool'` and the Output path should be `Battery-Analysis-Tool/output'`. Refer to the existing path as an example.
 
 6. Run the script
 
