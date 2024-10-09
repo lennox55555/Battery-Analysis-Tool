@@ -2,28 +2,11 @@
 
 This repository contains the **BatteryAnalysisTool.ipynb** notebook, which is used for analyzing and visualizing battery voltage data, detecting anomalies, and generating reports. Follow the instructions below to get the notebook up and running on your local machine.
 
-## Prerequisites
-
-Make sure you have the following installed on your system:
-
-- Python 3.7 or higher (Python 3.11 is recommended)
-- `pip` (Python package installer)
-- Jupyter Notebook or Jupyter Lab
-
-# Battery Storage Voltage Analysis Detection
-
-This tool processes cell voltage data from CSV files to identify potential sensor failures and analyze battery performance.
 
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-### Prerequisites
-
-You need Python 3.12.4 installed on your system. The project uses the following Python libraries:
-- pandas
-- matplotlib
-- numpy
 
 ### Installing
 
@@ -54,9 +37,9 @@ pip install -r requirements.txt
 
 5. Update the script with correlating path:
 
-- Place your CSV file in the `Battery-Storage-Analysis-Tool` directory.
+- Place your all your CSV files in the `Battery-Storage-Analysis-Tool` directory.
 
-- Open `main.py` and update the file path in the `load_battery_data`.
+- Open `main.py` and update the input and output file path. Input should be the directory `.../Battery-Storage-Analysis-Tool` and the Output path should be `.../Battery-Storage-Analysis-Tool/output`. Refer to the existing path as an example.
 
 6. Run the script
 
