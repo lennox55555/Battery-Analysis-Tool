@@ -225,98 +225,189 @@ def process_csv_files(input_folder, output_folder):
     Returns:
     pd.DataFrame: Summary of detected anomalies and downtimes across all files.
     """
-    # initializes lists to store anomalies and plots across all files for summary generation
     all_anomalies = []
     all_plots = []
-
-    # lists all CSV files in the input folder for batch processing
     csv_files = [f for f in os.listdir(input_folder) if f.endswith('.csv')]
-
-    # processes each file one by one to extract and analyze battery data
+    
     for i, csv_file in enumerate(csv_files, 1):
-        # constructs the full path to the current file for loading
         file_path = os.path.join(input_folder, csv_file)
-        # logs the progress of the file being processed for user feedback
         print(f"Processing file {i} of {len(csv_files)}: {csv_file}")
-
+        
         try:
-            # loads and cleans the data from the specified file for analysis
             df = load_and_clean_battery_data(file_path)
-
-            # extracts the file name without extension for labeling plots
+            
             file_name = os.path.splitext(csv_file)[0]
-
-            # detects anomalies and generates plots using threshold analysis
             anomalies, plots = plot_min_voltages_with_dynamic_thresholds(df, file_name, deviation_factor=0.025)
-            # aggregates anomalies and plots across all processed files
             all_anomalies.extend(anomalies)
             all_plots.extend(plots)
-
-            # logs the number of anomalies and plots generated for the current file
+            
             print(f"Finished processing {csv_file}. {len(anomalies)} anomalies detected. {len(plots)} plots generated.")
-        # handles errors during file processing and logs them for troubleshooting
         except Exception as e:
             print(f"Error processing {csv_file}: {str(e)}")
-
-    # creates a DataFrame from all detected anomalies for summary and analysis
+    
+    # Create summary DataFrame
     anomaly_df = pd.DataFrame(all_anomalies)
-
-    # checks if any anomalies were detected; if not, prepares an empty DataFrame for output
+    
     if not anomaly_df.empty:
-        # groups anomalies by 'Rack' and 'Type' for summary statistics
         summary = anomaly_df.groupby(['Rack', 'Type']).agg({
-            'Start_Time': 'min',  # identifies the first occurrence of an anomaly
-            'End_Time': 'max',  # identifies the last occurrence of an anomaly
-            'Duration': 'sum',  # calculates total duration of anomalies
+            'Start_Time': 'min',
+            'End_Time': 'max',
+            'Duration': 'sum',
             'Max_RoC': lambda x: x.max() if x.notna().any() else None
-            # finds the maximum rate of change for significant anomalies
         }).reset_index()
-
-        # renames columns for clarity in the output summary
-        summary.columns = ['Rack', 'Type', 'First anomaly time', 'Last anomaly time', 'Total duration',
-                           'Max Rate of Change']
-
-        # calculates the number of detected anomalies for each 'Rack' and 'Type' combination
+        
+        summary.columns = ['Rack', 'Type', 'First anomaly time', 'Last anomaly time', 'Total duration', 'Max Rate of Change']
+        
         anomaly_counts = anomaly_df.groupby(['Rack', 'Type']).size().reset_index(name='Number of anomalies detected')
-        # merges anomaly counts with the summary DataFrame for a complete view
         summary = summary.merge(anomaly_counts, on=['Rack', 'Type'])
-
-        # reorders columns for better readability in the output summary
-        summary = summary[['Rack', 'Type', 'Number of anomalies detected', 'First anomaly time', 'Last anomaly time',
-                           'Total duration', 'Max Rate of Change']]
-
-        # sorts the summary by 'Rack' and 'Type' for consistent output ordering
+        
+        summary = summary[['Rack', 'Type', 'Number of anomalies detected', 'First anomaly time', 'Last anomaly time', 'Total duration', 'Max Rate of Change']]
+        
         summary = summary.sort_values(['Rack', 'Type'])
     else:
-        # prepares an empty summary DataFrame with the required columns when no anomalies are detected
-        summary = pd.DataFrame(
-            columns=['Rack', 'Type', 'Number of anomalies detected', 'First anomaly time', 'Last anomaly time',
-                     'Total duration', 'Max Rate of Change'])
-
-    # saves the summary DataFrame as a CSV file for external review and documentation
+        summary = pd.DataFrame(columns=['Rack', 'Type', 'Number of anomalies detected', 'First anomaly time', 'Last anomaly time', 'Total duration', 'Max Rate of Change'])
+    
+    # Save summary to CSV
     summary_csv_path = os.path.join(output_folder, 'combined_anomaly_summary.csv')
     summary.to_csv(summary_csv_path, index=False)
     print(f"\nCombined anomaly and downtime summary exported to: {summary_csv_path}")
-
-    # checks if any plots were generated; if so, saves them as an interactive HTML file
+    
+    # Save plots to multiple HTML files
     if all_plots:
-        # defines the file path for saving all plots into a single HTML file
-        html_path = os.path.join(output_folder, 'anomaly_plots.html')
-        with open(html_path, 'w') as f:
-            # writes basic HTML structure to contain Plotly graphs
-            f.write('<html><head><title>Anomaly Plots</title></head><body>')
-            # iterates through each Plotly figure and adds it to the HTML file
-            for plot in all_plots:
-                f.write(plot.to_html(full_html=False, include_plotlyjs='cdn'))
-            f.write('</body></html>')
-        print(f"Interactive plots saved to: {html_path}")
-        print(f"Total number of plots generated: {len(all_plots)}")
+        plots_per_page = 5
+        num_pages = ceil(len(all_plots) / plots_per_page)
+        
+        for page in range(num_pages):
+            start_idx = page * plots_per_page
+            end_idx = min((page + 1) * plots_per_page, len(all_plots))
+            
+            html_path = os.path.join(output_folder, f'anomaly_plots_page_{page+1}.html')
+            with open(html_path, 'w') as f:
+                f.write('<html><head><title>Anomaly Plots</title></head><body>')
+                
+                # Add navigation links
+                f.write('<div style="position: fixed; top: 10px; right: 10px;">')
+                if page > 0:
+                    f.write(f'<a href="anomaly_plots_page_{page}.html">Previous</a> ')
+                if page < num_pages - 1:
+                    f.write(f'<a href="anomaly_plots_page_{page+2}.html">Next</a>')
+                f.write('</div>')
+                
+                for plot in all_plots[start_idx:end_idx]:
+                    plot_div = pio.to_html(plot, full_html=False, include_plotlyjs='cdn')
+                    f.write(plot_div)
+                f.write('</body></html>')
+        
+        print(f"Interactive plots saved to {num_pages} HTML files in the output folder.")
+        print(f"Total number of plots generated and saved: {len(all_plots)}")
     else:
-        # logs that no plots were generated if no anomalies were detected across all files
         print("No anomaly plots generated.")
-
-    # returns the final summary DataFrame for potential use in other parts of the program
+    
     return summary
+
+# def process_csv_files(input_folder, output_folder):
+#     """
+#     Processes all CSV files in the input folder and generates analysis results.
+
+#     Params:
+#     input_folder (str): Path to the folder containing CSV files.
+#     output_folder (str): Path to the folder where results will be saved.
+
+#     Returns:
+#     pd.DataFrame: Summary of detected anomalies and downtimes across all files.
+#     """
+#     # initializes lists to store anomalies and plots across all files for summary generation
+#     all_anomalies = []
+#     all_plots = []
+
+#     # lists all CSV files in the input folder for batch processing
+#     csv_files = [f for f in os.listdir(input_folder) if f.endswith('.csv')]
+
+#     # processes each file one by one to extract and analyze battery data
+#     for i, csv_file in enumerate(csv_files, 1):
+#         # constructs the full path to the current file for loading
+#         file_path = os.path.join(input_folder, csv_file)
+#         # logs the progress of the file being processed for user feedback
+#         print(f"Processing file {i} of {len(csv_files)}: {csv_file}")
+
+#         try:
+#             # loads and cleans the data from the specified file for analysis
+#             df = load_and_clean_battery_data(file_path)
+
+#             # extracts the file name without extension for labeling plots
+#             file_name = os.path.splitext(csv_file)[0]
+
+#             # detects anomalies and generates plots using threshold analysis
+#             anomalies, plots = plot_min_voltages_with_dynamic_thresholds(df, file_name, deviation_factor=0.025)
+#             # aggregates anomalies and plots across all processed files
+#             all_anomalies.extend(anomalies)
+#             all_plots.extend(plots)
+
+#             # logs the number of anomalies and plots generated for the current file
+#             print(f"Finished processing {csv_file}. {len(anomalies)} anomalies detected. {len(plots)} plots generated.")
+#         # handles errors during file processing and logs them for troubleshooting
+#         except Exception as e:
+#             print(f"Error processing {csv_file}: {str(e)}")
+
+#     # creates a DataFrame from all detected anomalies for summary and analysis
+#     anomaly_df = pd.DataFrame(all_anomalies)
+
+#     # checks if any anomalies were detected; if not, prepares an empty DataFrame for output
+#     if not anomaly_df.empty:
+#         # groups anomalies by 'Rack' and 'Type' for summary statistics
+#         summary = anomaly_df.groupby(['Rack', 'Type']).agg({
+#             'Start_Time': 'min',  # identifies the first occurrence of an anomaly
+#             'End_Time': 'max',  # identifies the last occurrence of an anomaly
+#             'Duration': 'sum',  # calculates total duration of anomalies
+#             'Max_RoC': lambda x: x.max() if x.notna().any() else None
+#             # finds the maximum rate of change for significant anomalies
+#         }).reset_index()
+
+#         # renames columns for clarity in the output summary
+#         summary.columns = ['Rack', 'Type', 'First anomaly time', 'Last anomaly time', 'Total duration',
+#                            'Max Rate of Change']
+
+#         # calculates the number of detected anomalies for each 'Rack' and 'Type' combination
+#         anomaly_counts = anomaly_df.groupby(['Rack', 'Type']).size().reset_index(name='Number of anomalies detected')
+#         # merges anomaly counts with the summary DataFrame for a complete view
+#         summary = summary.merge(anomaly_counts, on=['Rack', 'Type'])
+
+#         # reorders columns for better readability in the output summary
+#         summary = summary[['Rack', 'Type', 'Number of anomalies detected', 'First anomaly time', 'Last anomaly time',
+#                            'Total duration', 'Max Rate of Change']]
+
+#         # sorts the summary by 'Rack' and 'Type' for consistent output ordering
+#         summary = summary.sort_values(['Rack', 'Type'])
+#     else:
+#         # prepares an empty summary DataFrame with the required columns when no anomalies are detected
+#         summary = pd.DataFrame(
+#             columns=['Rack', 'Type', 'Number of anomalies detected', 'First anomaly time', 'Last anomaly time',
+#                      'Total duration', 'Max Rate of Change'])
+
+#     # saves the summary DataFrame as a CSV file for external review and documentation
+#     summary_csv_path = os.path.join(output_folder, 'combined_anomaly_summary.csv')
+#     summary.to_csv(summary_csv_path, index=False)
+#     print(f"\nCombined anomaly and downtime summary exported to: {summary_csv_path}")
+
+#     # checks if any plots were generated; if so, saves them as an interactive HTML file
+#     if all_plots:
+#         # defines the file path for saving all plots into a single HTML file
+#         html_path = os.path.join(output_folder, 'anomaly_plots.html')
+#         with open(html_path, 'w') as f:
+#             # writes basic HTML structure to contain Plotly graphs
+#             f.write('<html><head><title>Anomaly Plots</title></head><body>')
+#             # iterates through each Plotly figure and adds it to the HTML file
+#             for plot in all_plots:
+#                 f.write(plot.to_html(full_html=False, include_plotlyjs='cdn'))
+#             f.write('</body></html>')
+#         print(f"Interactive plots saved to: {html_path}")
+#         print(f"Total number of plots generated: {len(all_plots)}")
+#     else:
+#         # logs that no plots were generated if no anomalies were detected across all files
+#         print("No anomaly plots generated.")
+
+#     # returns the final summary DataFrame for potential use in other parts of the program
+#     return summary
 
 
 # main execution block ensures that the following code only runs when this script is executed directly
