@@ -27,10 +27,17 @@ You need Python 3.12.4 installed on your system. The project uses the following 
 
 ### Installing
 
-1. Clone the repository and Change Directory:
+1. Clone the repository:
 
 ```bash
 git clone https://github.com/lennox55555/Battery-Analysis-Tool.git
+```
+
+### Installing
+
+2. Change Directory:
+
+```bash
 cd Battery-Storage-Analysis-Tool
 ```
 
